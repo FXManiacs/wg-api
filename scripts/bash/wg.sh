@@ -57,12 +57,17 @@ get_vpn_ip() {
 
 add_user() {
     local user=$1
+	local i_pkey=$2
     local template_file=${CLIENT_TPL_FILE}
     local interface=${_INTERFACE}
     local userdir="../../profiles/$user"
 
     mkdir -p "$userdir"
-    wg genkey | tee $userdir/privatekey | wg pubkey > $userdir/publickey
+	if [[ ! -z $pkey ]]; then
+		echo $pkey | tee $userdir/privatekey | wg pubkey > $userdir/publickey
+	else
+		wg genkey | tee $userdir/privatekey | wg pubkey > $userdir/publickey
+	fi
 
     # client config file
     _PRIVATE_KEY=`cat $userdir/privatekey`
@@ -151,7 +156,7 @@ do_user() {
             echo "$user exist"
             exit 1
         fi
-        add_user $user
+        add_user $user $pkey
     elif [[ $action == "-d" ]]; then
         del_user $user
     fi
@@ -198,7 +203,13 @@ fi
 
 action=$1
 user=$2
+if [[ $3 == "-r" ]]; then
 route=$3
+else
+pkey=$3
+route=$4
+fi
+
 
 if [[ $action == "-i" ]]; then
     init_server
