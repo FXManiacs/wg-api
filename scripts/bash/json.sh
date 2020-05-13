@@ -3,6 +3,19 @@
 #
 # Copyright (C) 2015-2019 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
 
+mapfile -t savedTmpToArray < /root/wg-api/scripts/data/tmp/saved.tmp
+
+
+declare -A associatedArray
+
+for i in "${savedTmpToArray[@]}"
+do	
+	declare userName publicKey
+	read userName publicKey <<< "$(echo $i | awk '{print $1, $3}')"
+	
+	associatedArray["$publicKey"]=$userName
+done
+
 exec < <(exec wg show all dump)
 
 printf '{'
@@ -21,8 +34,11 @@ while read -r -d $'\t' device; do
 		delim=$'\n'
 	else
 		read -r public_key preshared_key endpoint allowed_ips latest_handshake transfer_rx transfer_tx persistent_keepalive
+		
 		printf '%s\t\t\t"%s": {' "$delim" "$public_key"
-		delim=$'\n'
+		delim=$'\n'		
+				
+		{ printf '%s\t\t\t\t"nickname": "%s"' "$delim" "${associatedArray["$public_key"]}"; delim=$',\n';}		
 		[[ $preshared_key == "(none)" ]] || { printf '%s\t\t\t\t"presharedKey": "%s"' "$delim" "$preshared_key"; delim=$',\n'; }
 		[[ $endpoint == "(none)" ]] || { printf '%s\t\t\t\t"endpoint": "%s"' "$delim" "$endpoint"; delim=$',\n'; }
 		[[ $latest_handshake == "0" ]] || { printf '%s\t\t\t\t"latestHandshake": %u' "$delim" $(( $latest_handshake )); delim=$',\n'; }

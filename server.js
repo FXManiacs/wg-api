@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const config = require('./config.json')
 var fs = require('fs')
 var ini = require('ini')
@@ -114,10 +115,10 @@ fastify.get('/peer/create/:username', function(request, reply) {
     }
 })
 
-fastify.get('/client/remove/:username', function(request, reply) {
+fastify.get('/peer/remove/:username', function(request, reply) {
     cliMsg(`${request.ip} requested removal of peer ${request.params.username}`)
     if (!authAction(request)) return
-    exec(`bash ./scripts/bash/wg.sh -d ${request.params.username}`, (err, stdout, stderr) => {
+    exec('bash ./scripts/bash/wg.sh -d ' + request.params.username, (err, stdout, stderr) => {
         reply.send(JSON.stringify({ code: 200, profile: "Revoked" }, null, 2))
     });
 })

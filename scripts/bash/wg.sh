@@ -91,6 +91,7 @@ add_user() {
         exit 1
     fi
 
+    echo "$user $_VPN_IP $public_key" >> ${SAVED_FILE}
     echo -e "\e[44m[wg-api cli]\e[0m Created $user"
 }
 
