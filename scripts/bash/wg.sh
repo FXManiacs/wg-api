@@ -55,9 +55,17 @@ get_vpn_ip() {
     echo "$ip"
 }
 
+add_vpn_ip() {
+    local ip=$1
+    if [[ $ip ]]; then
+		echo "$ip" >> ${AVAILABLE_IP_FILE}
+    fi
+}
+
 add_user() {
     local user=$1
 	local i_pkey=$2
+	local i_ip=$3
     local template_file=${CLIENT_TPL_FILE}
     local interface=${_INTERFACE}
     local userdir="../../profiles/$user"
@@ -71,7 +79,18 @@ add_user() {
 
     # client config file
     _PRIVATE_KEY=`cat $userdir/privatekey`
-    _VPN_IP=$(get_vpn_ip)
+	
+	if [[ ! -z $i_ip ]]; then
+		local cidr=${_VPN_NET}
+		IFS=$'/' read obj mask <<< "$cidr"
+		
+		_VPN_IP="$i_ip/$mask"
+		local mat="${_VPN_IP/\//\\\/}"
+		sed -i "/^$mat$/d" $AVAILABLE_IP_FILE
+    else
+		_VPN_IP=$(get_vpn_ip)
+	fi
+	
     if [[ -z $_VPN_IP ]]; then
         echo -e "\e[44m[wg-api cli]\e[0m No available IP"
         exit 1
@@ -93,6 +112,7 @@ add_user() {
     if [[ $? -ne 0 ]]; then
         echo "wg set failed"
         rm -rf $user
+		add_vpn_ip $_VPN_IP
         exit 1
     fi
 
@@ -116,7 +136,7 @@ del_user() {
     fi
     sed -i "/^$user /d" ${SAVED_FILE}
     if [[ -n "$ip" ]]; then
-        echo "$ip" >> ${AVAILABLE_IP_FILE}
+        add_vpn_ip $ip
     fi
     rm -rf $userdir && echo -e "\e[44m[wg-api cli]\e[0m Revoked $user"
 }
@@ -156,7 +176,7 @@ do_user() {
             echo "$user exist"
             exit 1
         fi
-        add_user $user $pkey
+        add_user $user $pkey $pip
     elif [[ $action == "-d" ]]; then
         del_user $user
     fi
@@ -207,7 +227,8 @@ if [[ $3 == "-r" ]]; then
 route=$3
 else
 pkey=$3
-route=$4
+pip=$4
+route=$5
 fi
 
 

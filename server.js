@@ -99,15 +99,25 @@ fastify.get('/peer/info/:username', function(request, reply) {
     }
 })
 
-fastify.get('/peer/create/:username/:privatkey', function(request, reply) {
-    cliMsg(`${request.ip} requested new peer named ${request.params.username} ${request.params.privatkey}`)
+fastify.get('/peer/create/:username', function(request, reply) {
+    cliMsg(`${request.ip} requested new peer named ${request.params.username} ${request.query.privatkey}`)
     if (!authAction(request)) return
     try {
         var profile = ini.parse(fs.readFileSync('./profiles/' + request.params.username + '/wg0.conf', 'utf-8'))
         profile.qr = "/peer/qr/" + request.params.username
         reply.send(JSON.stringify({ code: 500, error: "Profile already exists", profile }, null, 2))
     } catch (error) {
-        exec('bash ./scripts/bash/wg.sh -a ' + request.params.username + ' ' + request.params.privatkey, (err, stdout, stderr) => {
+		var lip = ''
+		var lkey = ''
+		if(request.query.privatkey != null)
+		{
+			lkey = request.query.privatkey;
+		}
+		if(request.query.ip != null)
+		{
+			lip = request.query.ip;
+		}
+        exec('bash ./scripts/bash/wg.sh -a ' + request.params.username + ' ' + lkey + ' ' + lip, (err, stdout, stderr) => {
             var profile = ini.parse(fs.readFileSync('./profiles/' + request.params.username + '/wg0.conf', 'utf-8'))
             profile.qr = "/peer/qr/" + request.params.username
             reply.send(JSON.stringify({ code: 200, profile }, null, 2))
