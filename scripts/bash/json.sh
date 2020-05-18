@@ -3,7 +3,7 @@
 #
 # Copyright (C) 2015-2019 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
 
-mapfile -t savedTmpToArray < /root/wg-api/scripts/data/tmp/saved.tmp
+mapfile -t savedTmpToArray < ./scripts/data/tmp/saved.tmp
 
 
 declare -A associatedArray
